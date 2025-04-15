@@ -83,10 +83,39 @@ def run_pipeline(
 
     # 🧠 Step 6.6 - Get all value labels for those variables from Neo4j
     value_dict = get_all_values_for_variables(graph, variable_names)
-    print(value_dict)
+
+
+    def rename_dict_with_llm(value_dict):
+        prompt = f"""
+    You are an assistant that corrects variable names in a Python dictionary to match column names in a DataFrame.
+
+    Here is the list of column names (case and spelling must match exactly):
+    {column_context}
+
+    Here is a Python dictionary where the keys are variable names, and the values are lists of category labels:
+    {json.dumps(value_dict, indent=2)}
+
+    Your task:
+    - Match each dictionary key to the most likely column name from the column list.
+    - Replace the key with the correct column name from the list.
+    - Do NOT modify the values.
+    - Do NOT invent new columns — only use exact matches from the list.
+    - Preserve the dictionary structure.
+    - Return only the corrected dictionary as valid JSON. No explanation.
+    """
+        response = llm_model.generate_content(prompt).text.strip()
+
+        try:
+            return json.loads(response)
+        except Exception as e:
+            print("⚠️ Failed to parse LLM output:", e)
+            return {}
+
+    # 🧩 Step 6.9 - Change value dictionary to correct names
+    renamed_value_dict = rename_dict_with_llm(value_dict)
 
     print("\n📊 Matched Values from Neo4j by Variable:")
-    for var, values in value_dict.items():
+    for var, values in renamed_value_dict.items():
         print(f"✔ {var}:")
         for v in values:
             print(f"   - {v}")
@@ -94,7 +123,7 @@ def run_pipeline(
     # 7) Ask Gemini to turn explanation into a structured execution plan
     print("\n🧩 Creating Agentic Plan from Gemini...\n")
 
-    plan = generate_plan(llm_model, final_answer, column_context, user_query, value_dict)
+    plan = generate_plan(llm_model, final_answer, column_context, user_query, renamed_value_dict)
     print(plan)
     if not plan:
         print("❌ No plan generated. Skipping agentic execution.")
