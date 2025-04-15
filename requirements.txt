@@ -1,0 +1,9 @@
+pandas
+numpy
+faiss-cpu
+google-generativeai
+py2neo
+sentence-transformers
+fastapi
+uvicorn[standard]
+openpyxl

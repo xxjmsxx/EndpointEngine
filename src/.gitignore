@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment variable files
+.env
+*.env
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VSCode and other editor folders
+.vscode/
+.idea/
+*.swp
+
+# Streamlit
+.streamlit/config.toml
+
+# Log files
+*.log
+
+# Pytest and coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Docker
+*.tar
+docker-compose.override.yml
+__docker_cache__/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Render build/output
+.render-build/
