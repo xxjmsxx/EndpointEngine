@@ -121,7 +121,7 @@ Write a concise paragraph explaining what this step is trying to achieve in the 
 
 def _code_prompt(user_query, thought, instruction, state_description):
     return f"""
-You are a Python expert who writes correct pandas code to analyze biomedical data.
+You are a Python expert who writes correct pandas or Dask code to analyze biomedical data.
 
 USER QUERY: {user_query}
 STEP PURPOSE: {thought}
@@ -131,17 +131,15 @@ CURRENT STATE:
 {state_description}
 
 Write Python code that:
-1. Uses the variables from the current state - no need to redefine them
+1. Uses the variables from the current state — no need to redefine them
 2. Performs the analysis described in the instruction
-3. Result should be in a variable called 'result'
+3. The result must be stored in a variable called 'result'
 4. If creating a new DataFrame named in the instruction (e.g., "Create a DataFrame called df_filtered"), define it as indicated and also assign it to a variable with that exact name
-5. Follow ONLY what is in the instructions. No extra steps as it might mess up following steps.
+5. Follow ONLY what is in the instruction — no additional logic, checks, or summaries
+6. Ensure the code is syntactically valid and will run whether the DataFrame is a pandas or Dask DataFrame
+7. Do NOT include .compute() — the result will be handled later
 
-You can import things only if you are 100% certain they exist.
-Do not add print statements or comments.
-Focus only on what the instruction asks for.
-
-Return ONLY executable Python code with no markdown formatting or explanation.
+Return ONLY valid Python code (no markdown, no comments).
 """
 
 def _recovery_prompt(error_msg, code, state_description, instruction):
