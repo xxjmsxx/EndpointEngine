@@ -17,7 +17,8 @@ def execute_plan(initial_df, plan_steps, user_query, llm_model, max_retries=2, v
             print(f"⚠️ Halting execution at step '{step['name']}' due to repeated failure.")
 
     final_check = _run_final_check(llm_model, user_query, completed_steps, failed_steps, react_log)
-    print(final_check)
+    if verbose:
+        print(final_check)
 
     final_response = _synthesize_final_response(llm_model, user_query, completed_steps, failed_steps, react_log)
     return final_response, react_log
@@ -32,19 +33,11 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
     code = code.replace("```python", "").replace("```", "").strip()
 
     try:
-        result = _run_code(code, state)
-        if result is None:
-            raise ValueError("Code did not produce a 'result' variable")
+        _run_code(code, state)
 
-        state["result"] = result
         reflection = llm_model.generate_content(
-            _reflection_prompt(user_query, step_name, instruction, code, result)).text.strip()
-        _log_step(react_log, step_name, thought, instruction, code, result, reflection, verbose)
-
-        if isinstance(result, pd.DataFrame) and result.empty and "empty" not in instruction.lower() and attempt < max_retries:
-            if verbose:
-                print("⚠️ Step produced an empty DataFrame. Retrying with adjusted approach...")
-            return _execute_step(step, state, user_query, llm_model, completed_steps, failed_steps, react_log, max_retries, verbose, attempt + 1)
+            _reflection_prompt(user_query, step_name, instruction, code, "execution complete")).text.strip()
+        _log_step(react_log, step_name, thought, instruction, code, "(not captured)", reflection, verbose)
 
         completed_steps.append(step_name)
         return True
@@ -58,14 +51,11 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
                 _recovery_prompt(str(e), code, state_description, instruction)).text.strip()
             recovery_code = recovery_code.replace("```python", "").replace("```", "").strip()
             try:
-                result = _run_code(recovery_code, state)
-                if result is None:
-                    raise ValueError("Recovery code did not produce a 'result' variable")
+                _run_code(recovery_code, state)
 
-                state["result"] = result
                 reflection = llm_model.generate_content(
-                    _reflection_prompt(user_query, step_name, instruction, recovery_code, result)).text.strip()
-                _log_step(react_log, step_name, thought, instruction, recovery_code, result, reflection, verbose)
+                    _reflection_prompt(user_query, step_name, instruction, recovery_code, "execution complete")).text.strip()
+                _log_step(react_log, step_name, thought, instruction, recovery_code, "(not captured)", reflection, verbose)
                 completed_steps.append(step_name)
                 return True
 
@@ -88,7 +78,6 @@ def _run_code(code, state):
     for var_name, var_value in local_scope.items():
         if var_name != "__builtins__" and var_name not in state:
             state[var_name] = var_value
-    return local_scope.get("result")
 
 def _print_step_header(step_name, step_num, attempt, verbose):
     if verbose:
@@ -99,12 +88,12 @@ def _log_step(log, step_name, thought, instruction, code, result, reflection, ve
         "thought": thought,
         "instruction": instruction,
         "code": code,
-        "result": str(result),
+        "result": result,
         "reflection": reflection
     }
     if verbose:
-        print(f"💭 Thought: {thought}\n🧾 Instruction: {instruction}\n🧠 Code:\n{code}")
-        print(f"📈 Result: {result if not isinstance(result, pd.DataFrame) else result.to_string(max_rows=10)}")
+        print(f"\U0001f4ad Thought: {thought}\n🧾 Instruction: {instruction}\n🧠 Code:\n{code}")
+        print(f"📈 Result: {result}")
         print(f"🔎 Reflection: {reflection}")
 
 def _get_state_description(state):
