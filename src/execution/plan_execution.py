@@ -78,7 +78,17 @@ def _run_code(code, state):
     for var_name, var_value in local_scope.items():
         if var_name != "__builtins__" and var_name not in state:
             state[var_name] = var_value
-    return local_scope.get("result")
+
+    result = local_scope.get("result")
+
+    # Smart compute logic: always compute final step result if possible
+    try:
+        if hasattr(result, "compute"):
+            result = result.compute()
+    except Exception:
+        pass
+
+    return result
 
 def _print_step_header(step_name, step_num, attempt, verbose):
     if verbose:
@@ -94,6 +104,7 @@ def _log_step(log, step_name, thought, instruction, code, result, reflection, ve
     }
     if verbose:
         print(f"\U0001f4ad Thought: {thought}\n🧾 Instruction: {instruction}\n🧠 Code:\n{code}")
+        print(f"📈 Result: {result}")
         print(f"🔎 Reflection: {reflection}")
 
 def _get_state_description(state):
