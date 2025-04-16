@@ -6,7 +6,7 @@ import os
 import uvicorn
 import pickle
 import faiss
-import dask.dataframe as dd
+import pandas as pd
 import time
 import traceback
 from src.database.neo4j_client import get_graph_connection, fetch_variable_and_value_nodes
@@ -57,9 +57,9 @@ def init_all():
         llm_model = initialize_gemini()
         progress_steps.append(f"✅ {init_stage} - Complete")
 
-        init_stage = "Loading Excel data (converted CSV via Dask)"
+        init_stage = "Loading Excel data"
         print(f"⚙️ {init_stage}...")
-        df = dd.read_csv(config.EXCEL_PATH.replace('.xlsx', '.csv'), blocksize="10MB")
+        df = pd.read_csv(config.CSV_PATH, engine='openpyxl')
         actual_columns = list(df.columns)
         column_context = "\n".join(f"- {col}" for col in actual_columns)
         progress_steps.append(f"✅ {init_stage} - Complete")

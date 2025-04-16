@@ -17,8 +17,7 @@ def execute_plan(initial_df, plan_steps, user_query, llm_model, max_retries=2, v
             print(f"⚠️ Halting execution at step '{step['name']}' due to repeated failure.")
 
     final_check = _run_final_check(llm_model, user_query, completed_steps, failed_steps, react_log)
-    if verbose:
-        print(final_check)
+    print(final_check)
 
     final_response = _synthesize_final_response(llm_model, user_query, completed_steps, failed_steps, react_log)
     return final_response, react_log
@@ -34,10 +33,18 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
 
     try:
         result = _run_code(code, state)
+        if result is None:
+            raise ValueError("Code did not produce a 'result' variable")
 
+        state["result"] = result
         reflection = llm_model.generate_content(
-            _reflection_prompt(user_query, step_name, instruction, code, "execution complete")).text.strip()
-        _log_step(react_log, step_name, thought, instruction, code, str(result), reflection, verbose)
+            _reflection_prompt(user_query, step_name, instruction, code, result)).text.strip()
+        _log_step(react_log, step_name, thought, instruction, code, result, reflection, verbose)
+
+        if isinstance(result, pd.DataFrame) and result.empty and "empty" not in instruction.lower() and attempt < max_retries:
+            if verbose:
+                print("⚠️ Step produced an empty DataFrame. Retrying with adjusted approach...")
+            return _execute_step(step, state, user_query, llm_model, completed_steps, failed_steps, react_log, max_retries, verbose, attempt + 1)
 
         completed_steps.append(step_name)
         return True
@@ -51,11 +58,14 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
                 _recovery_prompt(str(e), code, state_description, instruction)).text.strip()
             recovery_code = recovery_code.replace("```python", "").replace("```", "").strip()
             try:
-                _run_code(recovery_code, state)
+                result = _run_code(recovery_code, state)
+                if result is None:
+                    raise ValueError("Recovery code did not produce a 'result' variable")
 
+                state["result"] = result
                 reflection = llm_model.generate_content(
-                    _reflection_prompt(user_query, step_name, instruction, recovery_code, "execution complete")).text.strip()
-                _log_step(react_log, step_name, thought, instruction, recovery_code, "(not captured)", reflection, verbose)
+                    _reflection_prompt(user_query, step_name, instruction, recovery_code, result)).text.strip()
+                _log_step(react_log, step_name, thought, instruction, recovery_code, result, reflection, verbose)
                 completed_steps.append(step_name)
                 return True
 
@@ -78,17 +88,7 @@ def _run_code(code, state):
     for var_name, var_value in local_scope.items():
         if var_name != "__builtins__" and var_name not in state:
             state[var_name] = var_value
-
-    result = local_scope.get("result")
-
-    # Smart compute logic: always compute final step result if possible
-    try:
-        if hasattr(result, "compute"):
-            result = result.compute()
-    except Exception:
-        pass
-
-    return result
+    return local_scope.get("result")
 
 def _print_step_header(step_name, step_num, attempt, verbose):
     if verbose:
@@ -99,12 +99,11 @@ def _log_step(log, step_name, thought, instruction, code, result, reflection, ve
         "thought": thought,
         "instruction": instruction,
         "code": code,
-        "result": result,
+        "result": str(result),
         "reflection": reflection
     }
     if verbose:
-        print(f"\U0001f4ad Thought: {thought}\n🧾 Instruction: {instruction}\n🧠 Code:\n{code}")
-        print(f"📈 Result: {result}")
+        print(f"💭 Thought: {thought}\n🧾 Instruction: {instruction}\n🧠 Code:\n{code}")
         print(f"🔎 Reflection: {reflection}")
 
 def _get_state_description(state):
@@ -133,7 +132,7 @@ Write a concise paragraph explaining what this step is trying to achieve in the 
 
 def _code_prompt(user_query, thought, instruction, state_description):
     return f"""
-You are a Python expert who writes correct pandas or Dask code to analyze biomedical data.
+You are a Python expert who writes correct pandas code to analyze biomedical data.
 
 USER QUERY: {user_query}
 STEP PURPOSE: {thought}
@@ -143,15 +142,17 @@ CURRENT STATE:
 {state_description}
 
 Write Python code that:
-1. Uses the variables from the current state — no need to redefine them
+1. Uses the variables from the current state - no need to redefine them
 2. Performs the analysis described in the instruction
-3. The result must be stored in a variable called 'result'
+3. Stores the result in a variable called 'result' (please never show full rows, use len or only top 3 rows)
 4. If creating a new DataFrame named in the instruction (e.g., "Create a DataFrame called df_filtered"), define it as indicated and also assign it to a variable with that exact name
-5. Follow ONLY what is in the instruction — no additional logic, checks, or summaries
-6. Ensure the code is syntactically valid and will run whether the DataFrame is a pandas or Dask DataFrame
-7. Do NOT include .compute() unless specfied in the intructions
+5. Follow ONLY what is in the instructions. No extra steps as it might mess up following steps.
 
-Return ONLY valid Python code (no markdown, no comments).
+You can import things only if you are 100% certain they exist.
+Do not add print statements or comments.
+Focus only on what the instruction asks for.
+
+Return ONLY executable Python code with no markdown formatting or explanation.
 """
 
 def _recovery_prompt(error_msg, code, state_description, instruction):

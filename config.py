@@ -12,3 +12,6 @@ SIMILARITY_THRESHOLD = 0.35
 
 # Path to your Excel file
 EXCEL_PATH = "data/data.xlsx"
+
+# Path to your Excel file
+CSV_PATH = "data/data.csv"
