@@ -10,3 +10,4 @@ openpyxl
 python-dotenv
 huggingface_hub
 dask
+pyarrow
