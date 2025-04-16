@@ -138,7 +138,7 @@ Write Python code that:
 4. If creating a new DataFrame named in the instruction (e.g., "Create a DataFrame called df_filtered"), define it as indicated and also assign it to a variable with that exact name
 5. Follow ONLY what is in the instruction — no additional logic, checks, or summaries
 6. Ensure the code is syntactically valid and will run whether the DataFrame is a pandas or Dask DataFrame
-7. Do NOT include .compute() — the result will be handled later
+7. Do NOT include .compute() unless specfied in the intructions
 
 Return ONLY valid Python code (no markdown, no comments).
 """

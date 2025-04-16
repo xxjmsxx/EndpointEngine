@@ -48,6 +48,7 @@ Each step must include:
 - Compare and match the KG info against the column names above
 - The aim of the steps should be resolving the user query
 - If the instruction requires comparing cohorts (e.g., VATS vs. thoracotomy), assign them to named DataFrames like `df_vats` or `df_thoracotomy`.
+- I am using dask so the final step needs to be using compute so you actually get numbers back. Please make the steps lead up to a final compute step.
 
 
 ⚠️ Do not return any explanation. Respond ONLY with the JSON array.
