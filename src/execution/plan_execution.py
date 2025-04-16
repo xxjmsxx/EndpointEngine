@@ -84,17 +84,15 @@ def _print_step_header(step_name, step_num, attempt, verbose):
     if verbose:
         print(f"\n--- Step {step_num}: {step_name}{f' (Attempt {attempt})' if attempt else ''} ---")
 
-def _log_step(log, step_name, thought, instruction, code, result, reflection, verbose):
+def _log_step(log, step_name, thought, instruction, code, reflection, verbose):
     log[step_name] = {
         "thought": thought,
         "instruction": instruction,
         "code": code,
-        "result": result,
         "reflection": reflection
     }
     if verbose:
         print(f"\U0001f4ad Thought: {thought}\n🧾 Instruction: {instruction}\n🧠 Code:\n{code}")
-        print(f"📈 Result: {result}")
         print(f"🔎 Reflection: {reflection}")
 
 def _get_state_description(state):
