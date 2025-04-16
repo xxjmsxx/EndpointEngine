@@ -96,7 +96,7 @@ Please:
 3) Summarize how we might filter or join data to answer the question.
 4) Remember that only the number is the key (e.g., "Cardiaccomorbidity1 == 1" NOT "Cardiaccomorbidity1 == 1 - Coronary Artery Disease")
 5) Use the column context to change to correct spelling (e.g., "Cardiaccomorbidity1" = "cardiaccomorbidity1" )
-6) The last thing in the output should be an array of all variables that will be used during the steps but write them as they are from the KG context not the column context (e.g. [Bmi, OperativeDeath, Cardiaccomorbidty1])
+6) The last thing in the output should be an array of all variables that will be used during the steps. Confirm they have the same spelling as the data column context
 
 Provide a concise yet complete explanation.
 """
