@@ -37,7 +37,7 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
 
         reflection = llm_model.generate_content(
             _reflection_prompt(user_query, step_name, instruction, code, "execution complete")).text.strip()
-        _log_step(react_log, step_name, thought, instruction, code, str(result), reflection, verbose)
+        _log_step(react_log, step_name, thought, instruction, code, reflection, verbose)
 
         completed_steps.append(step_name)
         return True
@@ -55,7 +55,7 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
 
                 reflection = llm_model.generate_content(
                     _reflection_prompt(user_query, step_name, instruction, recovery_code, "execution complete")).text.strip()
-                _log_step(react_log, step_name, thought, instruction, recovery_code, "(not captured)", reflection, verbose)
+                _log_step(react_log, step_name, thought, instruction, recovery_code, reflection, verbose)
                 completed_steps.append(step_name)
                 return True
 
@@ -63,12 +63,12 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
                 if verbose:
                     print(f"❌ Recovery also failed: {str(e2)}")
                 reflection = f"Step failed with error: {str(e)}. Recovery attempt also failed: {str(e2)}"
-                _log_step(react_log, step_name, thought, instruction, code, f"ERROR: {str(e)}", reflection, verbose)
+                _log_step(react_log, step_name, thought, instruction, code, reflection, verbose)
                 failed_steps.append(step_name)
                 return False
         else:
             reflection = f"Step failed with error: {str(e)}. Maximum retries exceeded."
-            _log_step(react_log, step_name, thought, instruction, code, f"ERROR: {str(e)}", reflection, verbose)
+            _log_step(react_log, step_name, thought, instruction, code, reflection, verbose)
             failed_steps.append(step_name)
             return False
 
