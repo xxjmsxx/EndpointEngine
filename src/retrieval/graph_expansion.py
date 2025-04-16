@@ -5,7 +5,8 @@ def expand_graph_from_variable_filtered(graph, var_name, user_query, embed_model
     if similarity_threshold is None:
         similarity_threshold = config.SIMILARITY_THRESHOLD
 
-    query_embedding = embed_model.encode([user_query], convert_to_numpy=True)[0]
+    # Get query embedding using the API function
+    query_embedding = embed_model(user_query)
 
     cypher = """
     MATCH (v:Variable {name: $var_name})
@@ -22,17 +23,34 @@ def expand_graph_from_variable_filtered(graph, var_name, user_query, embed_model
 
     from src.embeddings.vector_index import compute_cosine_similarity
 
+    # Process in batches to avoid API limits
+    batch_size = 20
+    texts = []
+    row_map = []
+
     for row in data:
         related_var = row['related_var']
         related_val = row['related_val']
         if related_var and related_val:
             text = f"Value: {related_val} (from {related_var} - expanded)"
-            text_embed = embed_model.encode([text], convert_to_numpy=True)[0]
+            texts.append(text)
+            row_map.append((related_var, related_val))
+
+    if not texts:
+        return expansions
+
+    # Get embeddings for all texts in batches
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i+batch_size]
+        batch_embeddings = embed_model(batch_texts)
+
+        for j, text_embed in enumerate(batch_embeddings):
             sim = compute_cosine_similarity(query_embedding, text_embed)
             if sim >= similarity_threshold:
+                related_var, related_val = row_map[i+j]
                 expansions.append((
                     {
-                        "text": text,
+                        "text": texts[i+j],
                         "type": "value",
                         "parent_var": related_var,
                         "label": related_val,
@@ -40,4 +58,5 @@ def expand_graph_from_variable_filtered(graph, var_name, user_query, embed_model
                     },
                     1.0
                 ))
+
     return expansions

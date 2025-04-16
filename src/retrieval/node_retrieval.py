@@ -39,8 +39,12 @@ def retrieve_nodes(user_query, entries, index, embed_model, top_k=None):
     if top_k is None:
         top_k = config.TOP_K
 
-    query_embedding = embed_model.encode([user_query], convert_to_numpy=True)
+    # Get query embedding from API
+    query_embedding = embed_model(user_query).reshape(1, -1)
+
+    # Search the FAISS index
     distances, indices = index.search(query_embedding, top_k)
+
     results = []
     for rank, i in enumerate(indices[0]):
         results.append((entries[i], float(distances[0][rank])))
