@@ -145,7 +145,6 @@ CURRENT STATE:
 Write Python code that:
 1. Uses the variables from the current state - no need to redefine them
 2. Performs the analysis described in the instruction
-3. Stores the result in a variable called 'result' (please never show full rows, use len or only top 3 rows)
 4. If creating a new DataFrame named in the instruction (e.g., "Create a DataFrame called df_filtered"), define it as indicated and also assign it to a variable with that exact name
 5. Follow ONLY what is in the instructions. No extra steps as it might mess up following steps.
 
