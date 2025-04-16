@@ -33,11 +33,11 @@ def _execute_step(step, state, user_query, llm_model, completed_steps, failed_st
     code = code.replace("```python", "").replace("```", "").strip()
 
     try:
-        _run_code(code, state)
+        result = _run_code(code, state)
 
         reflection = llm_model.generate_content(
             _reflection_prompt(user_query, step_name, instruction, code, "execution complete")).text.strip()
-        _log_step(react_log, step_name, thought, instruction, code, "(not captured)", reflection, verbose)
+        _log_step(react_log, step_name, thought, instruction, code, str(result), reflection, verbose)
 
         completed_steps.append(step_name)
         return True
@@ -78,6 +78,7 @@ def _run_code(code, state):
     for var_name, var_value in local_scope.items():
         if var_name != "__builtins__" and var_name not in state:
             state[var_name] = var_value
+    return local_scope.get("result")
 
 def _print_step_header(step_name, step_num, attempt, verbose):
     if verbose:
@@ -134,6 +135,7 @@ CURRENT STATE:
 Write Python code that:
 1. Uses the variables from the current state - no need to redefine them
 2. Performs the analysis described in the instruction
+3. Result should be in a variable called 'result'
 4. If creating a new DataFrame named in the instruction (e.g., "Create a DataFrame called df_filtered"), define it as indicated and also assign it to a variable with that exact name
 5. Follow ONLY what is in the instructions. No extra steps as it might mess up following steps.
 
