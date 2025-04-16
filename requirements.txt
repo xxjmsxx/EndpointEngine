@@ -9,4 +9,4 @@ uvicorn[standard]
 openpyxl
 python-dotenv
 huggingface_hub
-dask-excel
+dask
