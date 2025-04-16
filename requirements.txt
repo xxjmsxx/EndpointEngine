@@ -1,3 +1,4 @@
+# Add psycopg2 to requirements.txt
 pandas
 numpy
 faiss-cpu
@@ -8,3 +9,4 @@ uvicorn[standard]
 openpyxl
 python-dotenv
 huggingface_hub
+dask-excel

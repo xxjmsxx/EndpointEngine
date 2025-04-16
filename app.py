@@ -3,9 +3,10 @@ from pydantic import BaseModel
 from main import run_pipeline
 import config
 import os
+import uvicorn
 import pickle
 import faiss
-import pandas as pd
+import dask.dataframe as dd
 import time
 import traceback
 from src.database.neo4j_client import get_graph_connection, fetch_variable_and_value_nodes
@@ -56,9 +57,9 @@ def init_all():
         llm_model = initialize_gemini()
         progress_steps.append(f"✅ {init_stage} - Complete")
 
-        init_stage = "Loading Excel data"
+        init_stage = "Loading Excel data (converted CSV via Dask)"
         print(f"⚙️ {init_stage}...")
-        df = pd.read_excel(config.EXCEL_PATH, engine='openpyxl')
+        df = dd.read_csv(config.EXCEL_PATH.replace('.xlsx', '.csv'), blocksize="10MB")
         actual_columns = list(df.columns)
         column_context = "\n".join(f"- {col}" for col in actual_columns)
         progress_steps.append(f"✅ {init_stage} - Complete")
@@ -160,3 +161,6 @@ def analyze(q: Query):
         print("❌ ERROR during query processing:", error_msg)
         traceback.print_exc()
         return {"error": error_msg}
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

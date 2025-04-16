@@ -38,9 +38,7 @@ def get_embedding_model():
             # Get embeddings for the batch
             batch_embeddings = []
             for text in batch:
-                embedding = client.feature_extraction(
-                    inputs=text,
-                )
+                embedding = client.feature_extraction(text)
                 batch_embeddings.append(embedding)
 
             all_embeddings.extend(batch_embeddings)
