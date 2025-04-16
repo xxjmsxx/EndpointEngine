@@ -59,7 +59,7 @@ def init_all():
 
         init_stage = "Loading Excel data"
         print(f"⚙️ {init_stage}...")
-        df = pd.read_csv(config.CSV_PATH, engine='openpyxl')
+        df = pd.read_csv(config.CSV_PATH)
         actual_columns = list(df.columns)
         column_context = "\n".join(f"- {col}" for col in actual_columns)
         progress_steps.append(f"✅ {init_stage} - Complete")
