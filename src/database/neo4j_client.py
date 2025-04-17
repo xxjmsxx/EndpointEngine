@@ -24,8 +24,9 @@ def fetch_variable_and_value_nodes(driver):
     """
 
     with driver.session() as session:
-        results = session.run(query)
-        return [record.data() for record in results]
+        result = session.run(query)
+        records = list(result)
+        return [record.data() for record in records]
 
 def extract_variable_array_from_text(text: str):
     match = re.search(r"\[([^\]]+)\]", text)
@@ -49,8 +50,8 @@ def get_all_values_for_variables(driver, variable_names):
         """
         with driver.session() as session:
             result = session.run(query, {"var_name": var_name})
-
-        values = [record["label"] for record in result if record.get("label")]
+            records = list(result)
+        values = [record["label"] for record in records if record.get("label")]
         values_by_variable[var_name] = values
 
     return values_by_variable

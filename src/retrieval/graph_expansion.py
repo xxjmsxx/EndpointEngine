@@ -18,13 +18,13 @@ def expand_graph_from_variable_filtered(driver, var_name, user_query, embed_mode
                     val2.label AS related_val,
                     labels(related) AS labels
     """
-    with driver.session() as session:
-        data = [
-            record.data()
-            for record in session.run(cypher, {"var_name": var_name})
-        ]
-    expansions = []
 
+    with driver.session() as session:
+        result = session.run(cypher, {"var_name": var_name})
+        records = list(result)  # ✅ Cache result to avoid stream exhaustion
+        data = [record.data() for record in records]
+
+    expansions = []
     from src.embeddings.vector_index import compute_cosine_similarity
 
     # Process in batches to avoid API limits

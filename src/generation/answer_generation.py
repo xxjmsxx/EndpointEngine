@@ -1,6 +1,7 @@
 def format_context(results, driver):
     """Format context for presentation to LLM"""
     context_blocks = []
+
     for entry, dist in results:
         if entry['type'] == 'value':
             cypher_val = """
@@ -9,16 +10,18 @@ def format_context(results, driver):
             RETURN type(r) as rel_type, connected.name as connected_name, labels(connected) as labels
             """
             with driver.session() as session:
-                rels = [
-                    record.data()
-                    for record in session.run(cypher_val, {"var_name": entry["parent_var"], "val": entry["label"]})
-                ]
+                result = session.run(cypher_val, {"var_name": entry["parent_var"], "val": entry["label"]})
+                records = list(result)  # ✅ Cache before reuse
+                rels = [record.data() for record in records]
+
             rel_txt = "\n".join([
                 f"➪ [{r['rel_type']}] → {r['connected_name']} ({', '.join(r['labels'])})"
                 for r in rels if r['connected_name']
             ])
+
             block = (f"Value '{entry['label']}' from Variable '{entry['parent_var']}' "
                      f"(Category: {entry.get('category','?')}, score={dist:.2f})\n{rel_txt}")
+
         else:  # 'variable'
             cypher_var = """
             MATCH (v:Variable {name: $var_name})
@@ -26,17 +29,20 @@ def format_context(results, driver):
             RETURN type(r) as rel_type, connected.name as connected_name, labels(connected) as labels
             """
             with driver.session() as session:
-                rels = [
-                    record.data()
-                    for record in session.run(cypher_var, {"var_name": entry["var_name"]})
-                ]
+                result = session.run(cypher_var, {"var_name": entry["var_name"]})
+                records = list(result)  # ✅ Cache before reuse
+                rels = [record.data() for record in records]
+
             rel_txt = "\n".join([
                 f"➪ [{r['rel_type']}] → {r['connected_name']} ({', '.join(r['labels'])})"
                 for r in rels if r['connected_name']
             ])
+
             block = (f"Variable '{entry['var_name']}' - {entry['description']} "
                      f"(Category: {entry['category']}, score={dist:.2f})\n{rel_txt}")
+
         context_blocks.append(block)
+
     return "\n\n".join(context_blocks)
 
 def reflection_loop(llm_model, user_query, current_results, entries, index, embed_model, graph, column_context, steps=2):
