@@ -1,6 +1,7 @@
 from py2neo import Graph
 import os
 import re
+import traceback
 import ast
 from collections import defaultdict
 from dotenv import load_dotenv
@@ -9,7 +10,11 @@ load_dotenv()
 
 def get_graph_connection():
     """Connect to Neo4j and return Graph object"""
-    return Graph(os.getenv("NEO4J_URL"), auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASS")))
+    try:
+        graph = Graph(os.getenv("NEO4J_URL"), auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASS")))
+        return graph
+    except Exception as e:
+        traceback.print_exc()
 
 def fetch_variable_and_value_nodes(graph):
     """Fetch variable and value nodes from Neo4j"""
