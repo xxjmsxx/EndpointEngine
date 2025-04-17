@@ -1,6 +1,6 @@
 import config
 
-def expand_graph_from_variable_filtered(graph, var_name, user_query, embed_model, similarity_threshold=None):
+def expand_graph_from_variable_filtered(driver, var_name, user_query, embed_model, similarity_threshold=None):
     """Expand graph from a variable with filtering by relevance"""
     if similarity_threshold is None:
         similarity_threshold = config.SIMILARITY_THRESHOLD
@@ -18,7 +18,11 @@ def expand_graph_from_variable_filtered(graph, var_name, user_query, embed_model
                     val2.label AS related_val,
                     labels(related) AS labels
     """
-    data = graph.run(cypher, var_name=var_name).data()
+    with driver.session() as session:
+        data = [
+            record.data()
+            for record in session.run(cypher, {"var_name": var_name})
+        ]
     expansions = []
 
     from src.embeddings.vector_index import compute_cosine_similarity

@@ -1,4 +1,4 @@
-def format_context(results, graph):
+def format_context(results, driver):
     """Format context for presentation to LLM"""
     context_blocks = []
     for entry, dist in results:
@@ -8,7 +8,11 @@ def format_context(results, graph):
             OPTIONAL MATCH (v)-[r]->(connected)
             RETURN type(r) as rel_type, connected.name as connected_name, labels(connected) as labels
             """
-            rels = graph.run(cypher_val, var_name=entry['parent_var'], val=entry['label']).data()
+            with driver.session() as session:
+                rels = [
+                    record.data()
+                    for record in session.run(cypher_val, {"var_name": entry["parent_var"], "val": entry["label"]})
+                ]
             rel_txt = "\n".join([
                 f"➪ [{r['rel_type']}] → {r['connected_name']} ({', '.join(r['labels'])})"
                 for r in rels if r['connected_name']
@@ -21,7 +25,11 @@ def format_context(results, graph):
             OPTIONAL MATCH (v)-[r]->(connected)
             RETURN type(r) as rel_type, connected.name as connected_name, labels(connected) as labels
             """
-            rels = graph.run(cypher_var, var_name=entry['var_name']).data()
+            with driver.session() as session:
+                rels = [
+                    record.data()
+                    for record in session.run(cypher_var, {"var_name": entry["var_name"]})
+                ]
             rel_txt = "\n".join([
                 f"➪ [{r['rel_type']}] → {r['connected_name']} ({', '.join(r['labels'])})"
                 for r in rels if r['connected_name']

@@ -13,8 +13,7 @@ def get_graph_connection():
     driver = GraphDatabase.driver(uri, auth=(user, password))
     return driver
 
-def fetch_variable_and_value_nodes(graph):
-    """Fetch variable and value nodes from Neo4j"""
+def fetch_variable_and_value_nodes(driver):
     query = """
     MATCH (v:Variable)-[:BELONGS_TO]->(c:Category)
     OPTIONAL MATCH (v)-[:HAS_VALUE]->(val:Value)
@@ -23,7 +22,10 @@ def fetch_variable_and_value_nodes(graph):
            c.name AS category,
            val.label AS value_label
     """
-    return graph.run(query).data()
+
+    with driver.session() as session:
+        results = session.run(query)
+        return [record.data() for record in results]
 
 def extract_variable_array_from_text(text: str):
     match = re.search(r"\[([^\]]+)\]", text)
@@ -35,7 +37,7 @@ def extract_variable_array_from_text(text: str):
     return variables
 
 # --- Retrieve all value labels grouped by variable name ---
-def get_all_values_for_variables(graph, variable_names):
+def get_all_values_for_variables(driver, variable_names):
     values_by_variable = {}
 
     for var_name in variable_names:
@@ -45,7 +47,8 @@ def get_all_values_for_variables(graph, variable_names):
         RETURN val.label AS label
         ORDER BY val.label
         """
-        result = graph.run(query, var_name=var_name)
+        with driver.session() as session:
+            result = session.run(query, {"var_name": var_name})
 
         values = [record["label"] for record in result if record.get("label")]
         values_by_variable[var_name] = values
