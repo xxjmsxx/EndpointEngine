@@ -3,11 +3,9 @@ pandas
 numpy
 faiss-cpu
 google-generativeai
-py2neo
+neo4j
 fastapi
 uvicorn[standard]
 openpyxl
 python-dotenv
 huggingface_hub
-dask
-pyarrow

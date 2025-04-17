@@ -1,20 +1,17 @@
-from py2neo import Graph
 import os
 import re
-import traceback
-import ast
-from collections import defaultdict
 from dotenv import load_dotenv
+from neo4j import GraphDatabase
 
 load_dotenv()
 
 def get_graph_connection():
-    """Connect to Neo4j and return Graph object"""
-    try:
-        graph = Graph(os.getenv("NEO4J_URL"), auth=(os.getenv("NEO4J_USER"), os.getenv("NEO4J_PASS")))
-        return graph
-    except Exception as e:
-        traceback.print_exc()
+    uri = os.getenv("NEO4J_URL")
+    user = os.getenv("NEO4J_USER")
+    password = os.getenv("NEO4J_PASS")
+
+    driver = GraphDatabase.driver(uri, auth=(user, password))
+    return driver
 
 def fetch_variable_and_value_nodes(graph):
     """Fetch variable and value nodes from Neo4j"""
